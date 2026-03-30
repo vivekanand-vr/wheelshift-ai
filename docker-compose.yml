@@ -1,0 +1,38 @@
+# Docker Compose for WheelShift AI Service (Development)
+# Note: This service connects to existing MySQL and Redis from wheelshift-backend
+
+services:
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wheelshift-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=development
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=${DB_USER:-wheelshift_ai}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-wheelshift_db}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=${REDIS_DB:-1}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./app:/app/app:ro  # Read-only mount for development
+    networks:
+      - wheelshift-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  wheelshift-network:
+    external: true
+    name: wheelshift-backend_wheelshift-network  # Network created by wheelshift-backend docker-compose

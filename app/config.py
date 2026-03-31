@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     content_based_weight: float = 0.6
     collaborative_weight: float = 0.4
     
+    # Internal service-to-service authentication
+    # Required in production. If unset in development, auth is skipped with a warning.
+    api_key: str
+
     # Logging
     log_level: str = "INFO"
     log_format: str = "json"

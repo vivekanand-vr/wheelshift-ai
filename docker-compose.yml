@@ -19,6 +19,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=${REDIS_DB:-1}
+      - API_KEY=${API_KEY}
       - LOG_LEVEL=INFO
     volumes:
       - ./app:/app/app:ro  # Read-only mount for development

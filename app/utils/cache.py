@@ -113,6 +113,32 @@ class CacheService:
         except Exception as e:
             logger.error(f"Error setting precomputed cache: {e}")
             return False
+
+    @staticmethod
+    def get_collaborative_similarity(vehicle_type: str, vehicle_id: int) -> Optional[dict]:
+        """Get cached collaborative filtering results (24h TTL key)"""
+        try:
+            key = f"similarity:collaborative:{vehicle_type}:{vehicle_id}:{CacheService.CACHE_VERSION}"
+            cached = redis_client.get(key)
+            if cached:
+                logger.debug(f"Collaborative cache HIT: {key}")
+                return json.loads(cached)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting collaborative cache for {vehicle_type}:{vehicle_id}: {e}")
+            return None
+
+    @staticmethod
+    def set_collaborative_similarity(vehicle_type: str, vehicle_id: int, data: dict) -> bool:
+        """Cache collaborative filtering results (24h TTL — changes slowly)"""
+        try:
+            key = f"similarity:collaborative:{vehicle_type}:{vehicle_id}:{CacheService.CACHE_VERSION}"
+            redis_client.setex(key, settings.cache_ttl_precomputed, json.dumps(data))
+            logger.debug(f"Cached collaborative {key}")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting collaborative cache for {vehicle_type}:{vehicle_id}: {e}")
+            return False
     
     @staticmethod
     def invalidate_similarity(vehicle_type: str, vehicle_id: int) -> bool:

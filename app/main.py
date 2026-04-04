@@ -135,7 +135,7 @@ async def global_exception_handler(request, exc):
 
 
 # Import and include routers
-from app.api.v1 import similarity
+from app.api.v1 import similarity, lead_scoring
 from app.security import verify_api_key
 from fastapi import Depends
 
@@ -143,5 +143,12 @@ app.include_router(
     similarity.router,
     prefix="/api/ai",
     tags=["Similarity"],
+    dependencies=[Depends(verify_api_key)],
+)
+
+app.include_router(
+    lead_scoring.router,
+    prefix="/api/ai",
+    tags=["Lead Scoring"],
     dependencies=[Depends(verify_api_key)],
 )

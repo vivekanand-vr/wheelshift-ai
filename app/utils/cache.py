@@ -185,3 +185,52 @@ class CacheService:
             return redis_client.ping()
         except Exception:
             return False
+
+    # ── Lead Scoring ────────────────────────────────────────────────────────
+
+    LEAD_SCORE_VERSION = "v1"
+
+    @staticmethod
+    def _lead_score_key(inquiry_id: int) -> str:
+        return f"lead_score:inquiry:{inquiry_id}:{CacheService.LEAD_SCORE_VERSION}"
+
+    @staticmethod
+    def get_lead_score(inquiry_id: int) -> Optional[dict]:
+        """Get cached lead score for an inquiry"""
+        try:
+            key = CacheService._lead_score_key(inquiry_id)
+            cached = redis_client.get(key)
+            if cached:
+                logger.debug(f"Lead score cache HIT: {key}")
+                return json.loads(cached)
+            logger.debug(f"Lead score cache MISS: {key}")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting lead score cache for inquiry {inquiry_id}: {e}")
+            return None
+
+    @staticmethod
+    def set_lead_score(inquiry_id: int, data: dict, ttl: Optional[int] = None) -> bool:
+        """Cache lead score for an inquiry"""
+        try:
+            key = CacheService._lead_score_key(inquiry_id)
+            ttl = ttl or settings.cache_ttl_lead_score
+            redis_client.setex(key, ttl, json.dumps(data))
+            logger.debug(f"Cached lead score {key} with TTL {ttl}s")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting lead score cache for inquiry {inquiry_id}: {e}")
+            return False
+
+    @staticmethod
+    def invalidate_lead_score(inquiry_id: int) -> bool:
+        """Remove cached lead score for an inquiry (call when inquiry state changes)"""
+        try:
+            key = CacheService._lead_score_key(inquiry_id)
+            redis_client.delete(key)
+            logger.debug(f"Invalidated lead score cache: {key}")
+            return True
+        except Exception as e:
+            logger.error(f"Error invalidating lead score cache for inquiry {inquiry_id}: {e}")
+            return False
+
